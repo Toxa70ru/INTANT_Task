@@ -1,0 +1,34 @@
+﻿<Window x:Name="MainWindow1" x:Class="INTANT_Task.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:INTANT_Task"
+        mc:Ignorable="d"
+        Title="Редактор Excel таблиц" Height="638" Width="906" WindowStyle="ThreeDBorderWindow" Background="#FFD27D36" Loaded="MainWindow_Loaded">
+    <Grid Margin="0,0,0,-6">
+        <TabControl Margin="0,0,0,318" VerticalAlignment="Top">
+            <TabItem Header="Панель инстркментов">
+                <TabItem.Background>
+                    <LinearGradientBrush EndPoint="0,1">
+                        <GradientStop Color="#FFF0F0F0"/>
+                        <GradientStop Color="#FFE2D7CE" Offset="1"/>
+                    </LinearGradientBrush>
+                </TabItem.Background>
+                <Grid Background="#FFE2D7CE" Height="96">
+                    <Button x:Name="Save_Button" Content="Save" HorizontalAlignment="Left" Margin="611,19,0,0" VerticalAlignment="Top" Height="40" Width="47" Click="SaveNewFileButton_Click"/>
+                    <Button x:Name="Button_Load2" Content="Загрузите дополнительный файл" HorizontalAlignment="Left" Margin="27,0,0,0" VerticalAlignment="Center" Height="18" Width="148" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="LoadingSecondFileButton_Click"/>
+                    <Button x:Name="Button_Load1" Content="Загрузите основной файл" HorizontalAlignment="Left" Margin="27,17,0,0" VerticalAlignment="Top" Height="18" Width="148" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="LoadingFirstFileButton_Click"/>
+                    <Button x:Name="Button_Previos_Conflict" Content="Предыдущий конфликт" HorizontalAlignment="Left" Margin="198,17,0,0" VerticalAlignment="Top" Height="18" Width="101" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="ShowValuePreviousConflictButton_Click"/>
+                    <Button x:Name="Button_Next_Conflict" Content="Следующий конфликт" HorizontalAlignment="Left" Margin="198,0,0,0" VerticalAlignment="Center" Height="18" Width="101" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="ShowValueNextConflictButton_Click"/>
+                    <Button x:Name="Compare_Button" Content="Сравнить файлы" HorizontalAlignment="Left" Margin="491,16,0,0" VerticalAlignment="Top" Height="18" Width="101" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="CompareButton_Click"/>
+                    <Button x:Name="Button_First_File" Content="Разрешить конфликт из первого файла" HorizontalAlignment="Left" Margin="316,17,0,0" VerticalAlignment="Top" FontSize="9" Click="SelectFromFirstFileButton_Click"/>
+                    <Button x:Name="Button_Second_File" Content="Разрешить конфликт из второго файла" HorizontalAlignment="Left" Margin="316,0,0,0" VerticalAlignment="Center" FontSize="9" Click="SelectFromSecondFileButton_Click"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <DataGrid x:Name="DataGrid1" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,124,465,287"/>
+        <DataGrid x:Name="DataGrid2" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="461,124,0,287"/>
+        <DataGrid x:Name="DataGrid3" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,363,0,0"/>
+    </Grid>
+</Window>
