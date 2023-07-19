@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:INTANT_Task"
         mc:Ignorable="d"
-        Title="Редактор Excel таблиц" Height="638" Width="906" WindowStyle="ThreeDBorderWindow" Background="#FFD27D36" Loaded="MainWindow_Loaded">
+        Title="Редактор Excel таблиц" Height="638" Width="906" WindowStyle="ThreeDBorderWindow" Background="#FFD27D36">
     <Grid Margin="0,0,0,-6">
         <TabControl Margin="0,0,0,318" VerticalAlignment="Top">
             <TabItem Header="Панель инстркментов">

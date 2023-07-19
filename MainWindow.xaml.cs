@@ -23,6 +23,7 @@ using OfficeOpenXml.Style;
 using System.Collections.Specialized;
 using System.Collections.ObjectModel;
 using System.Windows.Controls.Primitives;
+using OfficeOpenXml.FormulaParsing.Excel.Functions.Math;
 
 namespace INTANT_Task
 {
@@ -32,31 +33,22 @@ namespace INTANT_Task
         private DataTable dataTable2;
         private DataTable dataTable3;
         private int SelectedColumnIndex;
-        private int differencesCount;
-        private List<int> ConflictsRow;
-        private List<int> ConflictsColumn;
+        private List<string> Conflict;
         public MainWindow()
         {
             InitializeComponent();
-            Loaded += MainWindow_Loaded;
             dataTable1 = new DataTable();
             dataTable2 = new DataTable();
             dataTable3 = new DataTable();
-            ConflictsRow = new List<int>();
-            ConflictsColumn = new List<int>();
+            Conflict = new List<string>();
         }
         public string filePath1;
         public string filePath2;
         public string newFilePath;
-        public int position = 0;
+        public int differencesCount;
+        public int position = -1;
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e) 
-        {
-            Button_Previos_Conflict.IsEnabled = false;
-            Button_Next_Conflict.IsEnabled = false;
-            Button_First_File.IsEnabled = false;
-            Button_Second_File.IsEnabled = false;
-        }
+
 
         private void LoadingFirstFileButton_Click(object sender, RoutedEventArgs e)
         {
@@ -75,6 +67,7 @@ namespace INTANT_Task
                     using (var package = new ExcelPackage(new FileInfo(SelectedFile1Path))) 
                     {
                         dataTable1.Clear();
+                        dataTable3.Clear();
 
                         var workbook = package.Workbook;
                         if (workbook.Worksheets.Count >0) 
@@ -83,27 +76,41 @@ namespace INTANT_Task
                             DataGrid1.Columns.Clear();
                             DataGrid1.Items.Clear();
 
+                            DataGrid3.Columns.Clear();
+                            DataGrid3.Items.Clear();
+
                             dataTable1 = new DataTable();
+                            dataTable3 = new DataTable();
 
                             //Заполняем загаловки столбцов
                             foreach (var cell  in worksheet.Cells[1,1,1, worksheet.Dimension.Columns]) 
                             {
                                 dataTable1.Columns.Add(cell.Value?.ToString());
+                                dataTable3.Columns.Add(cell.Value?.ToString());
                             }
 
                             //Заполняем данные строк
                             for (int row = 2; row <= worksheet.Dimension.Rows; row++) 
                             {
-                                var dataRow = dataTable1.NewRow();
+                                var data1Row = dataTable1.NewRow();
+                                var data3Row = dataTable3.NewRow();
                                 for (int col = 1; col <= worksheet.Dimension.Columns; col++) 
                                 {
-                                    dataRow[col - 1] = worksheet.Cells[row, col].Value;
+                                    data1Row[col - 1] = worksheet.Cells[row, col].Value;
+                                    data3Row[col - 1] = worksheet.Cells[row, col].Value;
                                 }
-                                dataTable1.Rows.Add(dataRow);
+                                dataTable1.Rows.Add(data1Row);
+                                dataTable3.Rows.Add(data3Row);
+                                
                             }
                             if (string.IsNullOrEmpty(dataTable1.Columns[dataTable1.Columns.Count - 1].ColumnName)) 
                             {
                                 dataTable1.Columns.RemoveAt(dataTable1.Columns.Count - 1);
+                            }
+
+                            if (string.IsNullOrEmpty(dataTable3.Columns[dataTable3.Columns.Count - 1].ColumnName))
+                            {
+                                dataTable3.Columns.RemoveAt(dataTable3.Columns.Count - 1);
                             }
 
                             if (DataGrid1.ItemsSource is DataView dataView1)
@@ -120,6 +127,23 @@ namespace INTANT_Task
                             {
                                 DataGrid1.ItemsSource = dataTable1.DefaultView;
                                 DataGrid1.Items.Refresh();
+                            }
+
+
+                            if (DataGrid3.ItemsSource is DataView dataView3)
+                            {
+                                dataView3.Table.Rows.Clear();
+                                foreach (DataRow row in dataTable3.Rows)
+                                {
+                                    dataView3.Table.ImportRow(row);
+                                }
+                                dataView3.Table.AcceptChanges();
+                                DataGrid3.Items.Refresh();
+                            }
+                            else
+                            {
+                                DataGrid3.ItemsSource = dataTable3.DefaultView;
+                                DataGrid3.Items.Refresh();
                             }
                         }
                     }
@@ -205,27 +229,22 @@ namespace INTANT_Task
         }
         private void CompareButton_Click(object sender, RoutedEventArgs e)
         {
-            CompareExcelFiles(filePath1,filePath2, differencesCount,ConflictsRow,ConflictsColumn);
-            DataGrid3.ItemsSource = dataTable1.DefaultView;
-            DataGrid3.Items.Refresh();
-
+            CompareExcelFiles(filePath1,filePath2);
         }
 
         private void SelectFromFirstFileButton_Click(object sender, RoutedEventArgs e) 
         {
-            if (DataGrid3.SelectedItem is DataRowView selectedRow) 
+            if (DataGrid3.SelectedItem is DataRowView selectedRow)
             {
-                int rowIndex = dataTable3.Rows.IndexOf(selectedRow.Row);
+                string cellAddress = Conflict[position];
 
-                string valueFromFirstFile = dataTable1.Rows[rowIndex][SelectedColumnIndex]?.ToString();
+                int rowIndex = GetRowIndex(cellAddress);
+                rowIndex = rowIndex - 2;
 
-                dataTable3.Rows[rowIndex][SelectedColumnIndex] = valueFromFirstFile;
+                string valueFromSecondFile = dataTable1.Rows[rowIndex][SelectedColumnIndex]?.ToString();
 
-                if (!dataTable3.Rows.Contains(selectedRow.Row)) 
-                {
-                    dataTable3.ImportRow(selectedRow.Row);
-                }
-                SaveUserChoice(filePath1);
+                dataTable3.Rows[rowIndex][SelectedColumnIndex] = valueFromSecondFile;
+
                 DataGrid3.ItemsSource = dataTable3.DefaultView;
                 DataGrid3.Items.Refresh();
             }
@@ -235,18 +254,15 @@ namespace INTANT_Task
         {
             if (DataGrid3.SelectedItem is DataRowView selectedRow)
             {
-                int rowIndex = dataTable3.Rows.IndexOf(selectedRow.Row);
+                string cellAddress = Conflict[position];
+
+                int rowIndex = GetRowIndex(cellAddress);
+                rowIndex = rowIndex - 2;
+
 
                 string valueFromSecondFile = dataTable2.Rows[rowIndex][SelectedColumnIndex]?.ToString();
 
                 dataTable3.Rows[rowIndex][SelectedColumnIndex] = valueFromSecondFile;
-
-                if (!dataTable3.Rows.Contains(selectedRow.Row))
-                {
-                    dataTable3.ImportRow(selectedRow.Row);
-                }
-
-                SaveUserChoice(filePath2);
 
                 DataGrid3.ItemsSource = dataTable3.DefaultView;
                 DataGrid3.Items.Refresh();
@@ -256,52 +272,73 @@ namespace INTANT_Task
         private void ShowValueNextConflictButton_Click(object sender, RoutedEventArgs e) 
         {
             
-            if (position >= differencesCount)
+            if (position >= differencesCount-1)
             {
-                IsEnabled = false;
+                MessageBox.Show("Вы дошли до крайнего конфликта");
             }
             else 
             {
                 position++;
+                DisplayConflict(position, Conflict);
             }
 
-            DisplayConflict(position);
+            
         }
 
         private void ShowValuePreviousConflictButton_Click(object sender, RoutedEventArgs e)
         {
 
-            if (position <= differencesCount)
+            if (position <= 0)
             {
-                IsEnabled = false;
+                MessageBox.Show("Вы дошли до первого конфликта");
             }
-            else 
+            else
             {
                 position--;
+                DisplayConflict(position, Conflict);
             }
+
             
-            DisplayConflict(position);
         }
 
-        private void DisplayConflict(int conflictIndex) 
+        private void DisplayConflict(int conflictIndex,List<string> conflicts) 
         {
             //Очищаем выбранные ячейки в третьем DataGrid
             DataGrid3.UnselectAllCells();
 
-            if (DataGrid3.SelectedItem != null) 
+            if (dataTable3.Rows != null) 
             {
-                int positionRowConflict = ConflictsRow[conflictIndex];
-                int positionColumnConflict = ConflictsColumn[conflictIndex];
-                //Выделяем текущий конфликт
-                DataGrid3.SelectedIndex = positionRowConflict;
-                DataGrid3.SelectedItem = positionColumnConflict;
+                string cellAddress = conflicts[conflictIndex];
+
+                int rowIndex = GetRowIndex(cellAddress);
+
+                DataGrid3.SelectedIndex = rowIndex-2;
                 DataGrid3.ScrollIntoView(DataGrid3.SelectedItem);
 
                 //Обновляем индекс текущей выбранной колонки
-                SelectedColumnIndex = DataGrid3.CurrentCell.Column.DisplayIndex;
+                SelectedColumnIndex = rowIndex - 2;
             }
         }
 
+        private int GetRowIndex(string address) 
+        {
+            return int.Parse(Regex.Replace(address,"[^0-9]+",""));
+        }
+        private int GetColumnIndex(string address)
+        {
+            foreach (char c in address) 
+            {
+                if (char.IsLetter(c)) 
+                {
+                    char uppercaseChar = char.ToUpper(c);
+
+                    return (int)uppercaseChar - 65;
+                }
+            }
+            return 0;
+        }
+
+        #region SelectAll
         private void SaveUserChoice(string selectedFilePath) 
         {
             FileInfo selectedFile = new FileInfo(selectedFilePath);
@@ -310,17 +347,19 @@ namespace INTANT_Task
             {
                 ExcelWorksheet selectedWorksheet = selectedPackage.Workbook.Worksheets[1];
 
-                for (int row = 0; row <= dataTable3.Rows.Count; row++) 
+                string cellAddress = Conflict[position];
+
+                int rowIndex = GetRowIndex(cellAddress);
+                int columnIndex = GetColumnIndex(cellAddress);
+                DataRow dataRow = dataTable3.Rows[rowIndex-2];
+
+                for (int row = 2; row <= rowIndex; row++)
                 {
-                    DataRow dataRow = dataTable3.Rows[row];
-
-                    int rowIndex = row + 1;
-
-                    for (int col = 0; col <= dataTable3.Columns.Count; col++) 
+                    for (int col = 0; col <= columnIndex; col++)
                     {
                         DataColumn dataColumn = dataTable3.Columns[col];
 
-                        string cellValue = selectedWorksheet.Cells[rowIndex, col + 1].GetValue<string>()?.Trim();
+                        string cellValue = selectedWorksheet.Cells[row, col+1].GetValue<string>()?.Trim();
 
                         dataRow[dataColumn] = cellValue;
                     }
@@ -329,12 +368,20 @@ namespace INTANT_Task
                 DataGrid3.Items.Refresh();
             }
         }
+        #endregion
 
         private void SaveNewFileButton_Click(object sender, RoutedEventArgs e) 
         {
-            if (!string.IsNullOrEmpty(newFilePath))
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "Excel файлы (*.xlsx)|*.xlsx";
+            saveFileDialog.Title = "Выберите место сохранения нового файла";
+
+            bool? result = saveFileDialog.ShowDialog();
+            if (result == true) 
             {
-                FileInfo newFile = new FileInfo(newFilePath);
+                string savePath = saveFileDialog.FileName;
+
+                FileInfo newFile = new FileInfo(savePath);
                 using (ExcelPackage package = new ExcelPackage(newFile))
                 {
                     ExcelWorksheet worksheet = package.Workbook.Worksheets.Add("Sheet1");
@@ -353,23 +400,26 @@ namespace INTANT_Task
                     {
                         for (int col = 1; col <= colCount; col++)
                         {
-                            worksheet.Cells[row + 1, col].Value = dataTable3.Rows[row - 1][col - 1]?.ToString();
+                            string cellValue = dataTable3.Rows[row-1][col-1]?.ToString();
+                            worksheet.Cells[row + 1, col].Value = cellValue;
+                            Console.WriteLine($"Cell [{row+1},{col}]:{cellValue}");
                         }
                     }
                     package.Save();
                     MessageBox.Show("Новый файл сохранен.");
+                    /*DataGrid1.Columns.Clear();
+                    DataGrid2.Columns.Clear();
+                    DataGrid3.Columns.Clear();
+                    
+                    dataTable1.Clear();
+                    dataTable2.Clear();
+                    dataTable3.Clear();*/
                 }
-            }
-            else 
-            {
-                MessageBox.Show("Новый файл не найден.");
             }
         }
 
-        public static void CompareExcelFiles(string filePath1, string filePath2,int differencesCount,List<int> conflictRow, List<int> conflictColumn)
+        public  void CompareExcelFiles(string filePath1, string filePath2)
         {
-            //conflictColumn.Clear();
-            //conflictRow.Clear();
 
             FileInfo file1 = new FileInfo(filePath1);
             FileInfo file2 = new FileInfo(filePath2);
@@ -395,29 +445,22 @@ namespace INTANT_Task
                         if (!AreValuesEqual(cellValue1, cellValue2))
                         {
                             string cellAdress = $"{GetColumnLetter(col)}{row}";
-                            differences.Add($"Различие в ячейке {cellAdress}: {cellValue1} != {cellValue2}");
+                            //differences.Add($"Различие в ячейке {cellAdress}: {cellValue1} != {cellValue2}");
 
                             differencesCount++;
-
-                            conflictRow.Add(row);
-                            conflictColumn.Add(col);
+                            Conflict.Add( cellAdress );
                         }
                     }
                 }
-
-                HighlightDifferences(worksheet1, differences);
-                HighlightDifferences(worksheet2, differences);
+                
+                HighlightDifferences(worksheet1, Conflict);
+                HighlightDifferences(worksheet2, Conflict);
 
                 package1.Save();
                 package2.Save();
 
                 MessageBox.Show($"Сравнение завершено, количество различий {differencesCount}");
             }
-        }
-
-        public static void Main() 
-        {
-
         }
 
         private static bool AreValuesEqual(object value1, object value2)
@@ -472,15 +515,16 @@ namespace INTANT_Task
 
         private static int GetColumnNumber(string address)
         {
-            string columnLetter = Regex.Replace(address, @"[\d]", string.Empty);
-            int columnNumber = 0;
-
-            foreach (char c in columnLetter)
+            foreach (char c in address)
             {
-                columnNumber *= 26;
-                columnNumber += char.ToUpper(c) - 'A' + 1;
+                if (char.IsLetter(c))
+                {
+                    char uppercaseChar = char.ToUpper(c);
+
+                    return (int)uppercaseChar - 65;
+                }
             }
-            return columnNumber;
+            return 0;
         }
 
         private static T GetVisualChild<T>(Visual parent) where T : Visual
@@ -503,10 +547,9 @@ namespace INTANT_Task
             return child;
         }
 
-        private static void HighlightDifferences(ExcelWorksheet worksheet, List<string> differences)
+        private  void HighlightDifferences(ExcelWorksheet worksheet, List<string> differences)
         {
             var highlightedFill = System.Drawing.Color.FromArgb(255,255,0,0);
-
             foreach (var address in differences)
             {
                 int columnNumber = GetColumnNumber(address);
@@ -517,16 +560,19 @@ namespace INTANT_Task
                     continue;
                 }
 
-                int columnIndex = columnNumber - 1;
-
-                if (columnIndex < 0 || columnIndex >= worksheet.Dimension.Columns)
-                {
-                    continue;
-                }
+                int columnIndex = columnNumber;
 
                 ExcelRange cell = worksheet.Cells[rowIndex, columnIndex + 1];
 
-                var mergedCells = worksheet.MergedCells;
+                /*dataTable2.Rows[rowIndex][SelectedColumnIndex]?*/
+                DataRow dr = (DataRow)dataTable1.Rows[rowIndex][columnIndex];
+                //DataGrid1.SelectedCells[0].Item.
+
+
+                cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                cell.Style.Fill.BackgroundColor.SetColor(highlightedFill);
+
+                /*var mergedCells = worksheet.MergedCells;
                 foreach (var mergedCell in mergedCells)
                 {
                     ExcelCellAddress startAddress = new ExcelCellAddress(mergedCell);
@@ -546,48 +592,10 @@ namespace INTANT_Task
                         }
                         break;
                     }
-                }
-                cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                cell.Style.Fill.BackgroundColor.SetColor(highlightedFill);
+                }*/
+
+
             }
         }
     }
 }
-/*private static void HighlightDifferences(ExcelWorksheet worksheet, List<string> differences)
-        {
-            System.Windows.Media.Color highlightedColor = Colors.Red;
-
-            foreach (var address in differences)
-            {
-                int columnNumber = GetColumnNumber(address);
-                string rowNumber = Regex.Replace(address, @"[^\d]+", string.Empty);
-
-                if (!int.TryParse(rowNumber, out int rowIndex))
-                {
-                    continue;
-                }
-
-                int columnIndex = columnNumber - 1;
-
-                if (columnIndex < 0 || columnIndex >= worksheet.Dimension.Columns)
-                {
-                    continue;
-                }
-
-                // Изменяем цвет ячейки в DataGrid1 или DataGrid2
-                var dataGridCell1 = GetCellFromDataGrid(DataGrid1, rowIndex - 1, columnIndex);
-                dataGridCell1.Background = new SolidColorBrush(highlightedColor);
-
-                var dataGridCell2 = GetCellFromDataGrid(DataGrid2, rowIndex - 1, columnIndex);
-                dataGridCell2.Background = new SolidColorBrush(highlightedColor);
-
-                ExcelRange cell = worksheet.Cells[rowIndex, columnIndex + 1];
-
-                cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                cell.Style.Fill.BackgroundColor.SetColor(255, 255, 0, 0);
-            }
-
-            // Обновляем DataGrid1 и DataGrid2
-            DataGrid1.Items.Refresh();
-            DataGrid2.Items.Refresh();
-        }*/
