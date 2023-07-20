@@ -5,30 +5,40 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:INTANT_Task"
         mc:Ignorable="d"
-        Title="Редактор Excel таблиц" Height="638" Width="906" WindowStyle="ThreeDBorderWindow" Background="#FFD27D36">
+        Title="Редактор Excel таблиц" Height="638" Width="906" WindowStyle="ThreeDBorderWindow" Background="#FFD27D36" SizeToContent="Width" SizeChanged="Window_SizeChanged">
     <Grid Margin="0,0,0,-6">
-        <TabControl Margin="0,0,0,318" VerticalAlignment="Top">
-            <TabItem Header="Панель инстркментов">
-                <TabItem.Background>
-                    <LinearGradientBrush EndPoint="0,1">
-                        <GradientStop Color="#FFF0F0F0"/>
-                        <GradientStop Color="#FFE2D7CE" Offset="1"/>
-                    </LinearGradientBrush>
-                </TabItem.Background>
-                <Grid Background="#FFE2D7CE" Height="96">
-                    <Button x:Name="Save_Button" Content="Save" HorizontalAlignment="Left" Margin="611,19,0,0" VerticalAlignment="Top" Height="40" Width="47" Click="SaveNewFileButton_Click"/>
-                    <Button x:Name="Button_Load2" Content="Загрузите дополнительный файл" HorizontalAlignment="Left" Margin="27,0,0,0" VerticalAlignment="Center" Height="18" Width="148" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="LoadingSecondFileButton_Click"/>
-                    <Button x:Name="Button_Load1" Content="Загрузите основной файл" HorizontalAlignment="Left" Margin="27,17,0,0" VerticalAlignment="Top" Height="18" Width="148" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="LoadingFirstFileButton_Click"/>
-                    <Button x:Name="Button_Previos_Conflict" Content="Предыдущий конфликт" HorizontalAlignment="Left" Margin="198,17,0,0" VerticalAlignment="Top" Height="18" Width="101" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="ShowValuePreviousConflictButton_Click"/>
-                    <Button x:Name="Button_Next_Conflict" Content="Следующий конфликт" HorizontalAlignment="Left" Margin="198,0,0,0" VerticalAlignment="Center" Height="18" Width="101" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="ShowValueNextConflictButton_Click"/>
-                    <Button x:Name="Compare_Button" Content="Сравнить файлы" HorizontalAlignment="Left" Margin="491,16,0,0" VerticalAlignment="Top" Height="18" Width="101" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="CompareButton_Click"/>
-                    <Button x:Name="Button_First_File" Content="Разрешить конфликт из первого файла" HorizontalAlignment="Left" Margin="316,17,0,0" VerticalAlignment="Top" FontSize="9" Click="SelectFromFirstFileButton_Click"/>
-                    <Button x:Name="Button_Second_File" Content="Разрешить конфликт из второго файла" HorizontalAlignment="Left" Margin="316,0,0,0" VerticalAlignment="Center" FontSize="9" Click="SelectFromSecondFileButton_Click"/>
-                </Grid>
-            </TabItem>
-        </TabControl>
-        <DataGrid x:Name="DataGrid1" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,124,465,287"/>
-        <DataGrid x:Name="DataGrid2" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="461,124,0,287"/>
-        <DataGrid x:Name="DataGrid3" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,363,0,0"/>
+        <StackPanel>
+            <TabControl Margin="0,0,0,318" VerticalAlignment="Top">
+                <TabItem Header="Панель инстркментов">
+                    <TabItem.Background>
+                        <LinearGradientBrush EndPoint="0,1">
+                            <GradientStop Color="#FFF0F0F0"/>
+                            <GradientStop Color="#FFE2D7CE" Offset="1"/>
+                        </LinearGradientBrush>
+                    </TabItem.Background>
+                    <Grid Background="#FFE2D7CE" Height="96">
+                        <Button x:Name="Save_Button" Content="Save" HorizontalAlignment="Left" Margin="820,17,0,0" VerticalAlignment="Top" Height="40" Width="47" Click="SaveNewFileButton_Click"/>
+                        <Button x:Name="Button_Load2" Content="Загрузите дополнительный файл" HorizontalAlignment="Left" Margin="27,0,0,0" VerticalAlignment="Center" Height="18" Width="148" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="LoadingSecondFileButton_Click"/>
+                        <Button x:Name="Button_Load1" Content="Загрузите основной файл" HorizontalAlignment="Left" Margin="27,17,0,0" VerticalAlignment="Top" Height="18" Width="148" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="LoadingFirstFileButton_Click"/>
+                        <Button x:Name="Button_Previos_Conflict" Content="Предыдущий конфликт" HorizontalAlignment="Left" Margin="198,17,0,0" VerticalAlignment="Top" Height="18" Width="101" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="ShowValuePreviousConflictButton_Click"/>
+                        <Button x:Name="Button_Next_Conflict" Content="Следующий конфликт" HorizontalAlignment="Left" Margin="198,0,0,0" VerticalAlignment="Center" Height="18" Width="101" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="ShowValueNextConflictButton_Click"/>
+                        <Button x:Name="Compare_Button" Content="Сравнить файлы" HorizontalAlignment="Left" Margin="491,16,0,0" VerticalAlignment="Top" Height="18" Width="101" RenderTransformOrigin="1.137,1.346" FontSize="9" Click="CompareButton_Click"/>
+                        <Button x:Name="Button_First_File" Content="Разрешить конфликт из первого файла" HorizontalAlignment="Left" Margin="316,17,0,0" VerticalAlignment="Top" FontSize="9" Click="SelectFromFirstFileButton_Click"/>
+                        <Button x:Name="Button_Second_File" Content="Разрешить конфликт из второго файла" HorizontalAlignment="Left" Margin="316,0,0,0" VerticalAlignment="Center" FontSize="9" Click="SelectFromSecondFileButton_Click"/>
+                        <TextBox x:Name="TextBox1" HorizontalAlignment="Left" Margin="739,16,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="58" Background="#FFEF0A0A"/>
+                        <Label Content="Количество конфликтов: " HorizontalAlignment="Left" Margin="597,11,0,0" VerticalAlignment="Top"/>
+                        <TextBox x:Name="TextBox2" HorizontalAlignment="Left" Margin="739,0,0,0" TextWrapping="Wrap" VerticalAlignment="Center" Width="58" Background="#FFF9E402"/>
+                        <TextBox x:Name="TextBox3" HorizontalAlignment="Left" Margin="739,62,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="58" Background="#FF5BF905"/>
+                        <Label Content="Количество оставшихся конфликтов:" HorizontalAlignment="Left" Margin="526,38,0,0" VerticalAlignment="Top"/>
+                        <Label Content="Количество решенных конфликтов:" HorizontalAlignment="Left" Margin="533,55,0,0" VerticalAlignment="Top"/>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </StackPanel>
+        <Grid>
+            <DataGrid  x:Name="DataGrid1" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,124,465,287" HorizontalContentAlignment="Stretch" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <DataGrid  x:Name="DataGrid2" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="461,124,0,287" HorizontalContentAlignment="Stretch" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+            <DataGrid  x:Name="DataGrid3" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="0,363,0,0" VerticalAlignment="Bottom"/>
+        </Grid>
     </Grid>
 </Window>

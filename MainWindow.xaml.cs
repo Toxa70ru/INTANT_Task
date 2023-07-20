@@ -24,6 +24,7 @@ using System.Collections.Specialized;
 using System.Collections.ObjectModel;
 using System.Windows.Controls.Primitives;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.Math;
+using OfficeOpenXml.FormulaParsing.Excel.Functions.RefAndLookup;
 
 namespace INTANT_Task
 {
@@ -41,14 +42,38 @@ namespace INTANT_Task
             dataTable2 = new DataTable();
             dataTable3 = new DataTable();
             Conflict = new List<string>();
+            DataContext = this;
         }
         public string filePath1;
         public string filePath2;
         public string newFilePath;
         public int differencesCount;
+
+        public int compliteCount = 0;
+        public int ostatocCount = 0;
+
         public int position = -1;
 
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e) 
+        {
+            AdjustDataGridSize();
+        }
 
+        public void AdjustDataGridSize()
+        {
+            double newWidht1 = this.ActualWidth*0.49;
+            //double newWidht2 = this.ActualHeight;
+
+            double newHight = this.ActualHeight*0.4;
+
+            DataGrid1.Width = newWidht1;
+            DataGrid2.Width = newWidht1;
+            //DataGrid3.Width = newWidht2;
+
+            DataGrid1.Height = newHight;
+            DataGrid2.Height = newHight;
+            DataGrid3.Height = newHight;
+        }
 
         private void LoadingFirstFileButton_Click(object sender, RoutedEventArgs e)
         {
@@ -239,14 +264,22 @@ namespace INTANT_Task
                 string cellAddress = Conflict[position];
 
                 int rowIndex = GetRowIndex(cellAddress);
+                int colIndex = GetColumnIndex(cellAddress);
                 rowIndex = rowIndex - 2;
 
-                string valueFromSecondFile = dataTable1.Rows[rowIndex][SelectedColumnIndex]?.ToString();
+                string valueFromSecondFile = dataTable1.Rows[rowIndex][colIndex]?.ToString();
 
-                dataTable3.Rows[rowIndex][SelectedColumnIndex] = valueFromSecondFile;
+                dataTable3.Rows[rowIndex][colIndex] = valueFromSecondFile;
 
-                DataGrid3.ItemsSource = dataTable3.DefaultView;
-                DataGrid3.Items.Refresh();
+                ColorCompliteConflict(rowIndex, colIndex);
+                if (ostatocCount <= differencesCount) 
+                {
+                    string myVariable2 = (differencesCount - ostatocCount).ToString();
+                    TextBox2.Text = myVariable2;
+
+                    string myVariable3 = compliteCount.ToString();
+                    TextBox3.Text = myVariable3;
+                }
             }
         }
 
@@ -257,16 +290,43 @@ namespace INTANT_Task
                 string cellAddress = Conflict[position];
 
                 int rowIndex = GetRowIndex(cellAddress);
+                int colIndex = GetColumnIndex(cellAddress);
+
                 rowIndex = rowIndex - 2;
 
 
-                string valueFromSecondFile = dataTable2.Rows[rowIndex][SelectedColumnIndex]?.ToString();
+                string valueFromSecondFile = dataTable2.Rows[rowIndex][colIndex]?.ToString();
 
-                dataTable3.Rows[rowIndex][SelectedColumnIndex] = valueFromSecondFile;
+                dataTable3.Rows[rowIndex][colIndex] = valueFromSecondFile;
 
-                DataGrid3.ItemsSource = dataTable3.DefaultView;
-                DataGrid3.Items.Refresh();
+                ColorCompliteConflict(rowIndex, colIndex);
+                if (ostatocCount <= differencesCount) 
+                {
+                    string myVariable2 = (differencesCount - ostatocCount).ToString();
+                    TextBox2.Text = myVariable2;
+
+                    string myVariable3 = compliteCount.ToString();
+                    TextBox3.Text = myVariable3;
+                }
             }
+        }
+        private void ColorCompliteConflict(int positionRow,int positionCol) 
+        {
+            Style myStyle3 = new Style(typeof(TextBlock));//TODO: изменить на DataGridCell и выделить в отдельную функцию
+
+            myStyle3.Setters.Add(new Setter(TextBlock.BackgroundProperty, new SolidColorBrush(Colors.Green)));
+            DataGridRow dr4 = (DataGrid3.ItemContainerGenerator.ContainerFromItem(DataGrid3.Items[positionRow]) as DataGridRow);
+            FrameworkElement gridCell3 = null;
+            if (dr4 != null)
+                gridCell3 = DataGrid3.Columns[positionCol].GetCellContent(dr4);
+            if (gridCell3 != null)
+            {
+                gridCell3.Style = myStyle3;
+                gridCell3.UpdateLayout();
+            }
+            compliteCount++;
+            ostatocCount++;
+
         }
 
         private void ShowValueNextConflictButton_Click(object sender, RoutedEventArgs e) 
@@ -454,10 +514,16 @@ namespace INTANT_Task
                 }
                 
                 HighlightDifferences(worksheet1, Conflict);
-                HighlightDifferences(worksheet2, Conflict);
+                //HighlightDifferences(worksheet2, Conflict);
 
                 package1.Save();
                 package2.Save();
+
+                string myVariable1 = differencesCount.ToString();
+                TextBox1.Text = myVariable1;
+
+                string myVariable2 = differencesCount.ToString();
+                TextBox2.Text = myVariable2;
 
                 MessageBox.Show($"Сравнение завершено, количество различий {differencesCount}");
             }
@@ -553,49 +619,53 @@ namespace INTANT_Task
             foreach (var address in differences)
             {
                 int columnNumber = GetColumnNumber(address);
-                string rowNumber = Regex.Replace(address, @"[^\d]+", string.Empty);
+                int rowNumber = GetRowIndex(address);
 
-                if (!int.TryParse(rowNumber, out int rowIndex))
-                {
-                    continue;
-                }
+                rowNumber = rowNumber - 2;
 
-                int columnIndex = columnNumber;
+                ColorRows(rowNumber,columnNumber);
 
-                ExcelRange cell = worksheet.Cells[rowIndex, columnIndex + 1];
-
-                /*dataTable2.Rows[rowIndex][SelectedColumnIndex]?*/
-                DataRow dr = (DataRow)dataTable1.Rows[rowIndex][columnIndex];
-                //DataGrid1.SelectedCells[0].Item.
-
-
+                ExcelRange cell = worksheet.Cells[rowNumber + 1, columnNumber + 1];
+                
                 cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
                 cell.Style.Fill.BackgroundColor.SetColor(highlightedFill);
-
-                /*var mergedCells = worksheet.MergedCells;
-                foreach (var mergedCell in mergedCells)
-                {
-                    ExcelCellAddress startAddress = new ExcelCellAddress(mergedCell);
-                    ExcelCellAddress endAddress = new ExcelCellAddress(mergedCell.Split('!')[1]);
-
-                    if (startAddress.Row <= rowIndex && rowIndex <= endAddress.Row &&
-                        startAddress.Column <= columnIndex + 1 && columnIndex + 1 <= endAddress.Column)
-                    {
-                        for (int i = startAddress.Row; i <= endAddress.Row; i++)
-                        {
-                            for (int j = startAddress.Column; j <= endAddress.Column; j++)
-                            {
-                                ExcelRange range = worksheet.Cells[i, j];
-                                range.Style.Fill.PatternType = ExcelFillStyle.Solid;
-                                range.Style.Fill.BackgroundColor.SetColor(highlightedFill);
-                            }
-                        }
-                        break;
-                    }
-                }*/
-
-
             }
         }
+        private void ColorRows(int positionRow,int positionCol) 
+        {
+            Style myStyle1 = new Style(typeof(TextBlock));//TODO: изменить на DataGridCell и выделить в отдельную функцию
+
+            myStyle1.Setters.Add(new Setter(TextBlock.BackgroundProperty, new SolidColorBrush(Colors.Red)));
+
+            DataGridRow dr1 = (DataGrid1.ItemContainerGenerator.ContainerFromItem(DataGrid1.Items[positionRow]) as DataGridRow);
+            FrameworkElement gridCell = null;
+            if (dr1 != null)
+                gridCell = DataGrid1.Columns[positionCol].GetCellContent(dr1);
+            if (gridCell != null)
+            {
+                gridCell.Style = myStyle1;
+            }
+
+
+            DataGridRow dr2 = (DataGrid2.ItemContainerGenerator.ContainerFromItem(DataGrid2.Items[positionRow]) as DataGridRow);
+            FrameworkElement gridCell2 = null;
+            if (dr2 != null)
+                gridCell2 = DataGrid1.Columns[positionCol].GetCellContent(dr2);
+            if (gridCell2 != null)
+                gridCell2.Style = myStyle1;
+
+            Style myStyle2 = new Style(typeof(TextBlock));//TODO: изменить на DataGridCell и выделить в отдельную функцию
+
+            myStyle2.Setters.Add(new Setter(TextBlock.BackgroundProperty, new SolidColorBrush(Colors.Yellow)));
+            DataGridRow dr3 = (DataGrid3.ItemContainerGenerator.ContainerFromItem(DataGrid3.Items[positionRow]) as DataGridRow);
+            FrameworkElement gridCell3 = null;
+            if (dr3 != null)
+                gridCell3 = DataGrid3.Columns[positionCol].GetCellContent(dr3);
+            if (gridCell3 != null)
+            {
+                gridCell3.Style = myStyle2;
+            }
+        }
+
     }
 }
