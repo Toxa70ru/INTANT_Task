@@ -33,7 +33,6 @@ namespace INTANT_Task
         private DataTable dataTable1;
         private DataTable dataTable2;
         private DataTable dataTable3;
-        private int SelectedColumnIndex;
         private List<string> Conflict;
         public MainWindow()
         {
@@ -64,7 +63,8 @@ namespace INTANT_Task
             double newWidht1 = this.ActualWidth*0.49;
             //double newWidht2 = this.ActualHeight;
 
-            double newHight = this.ActualHeight*0.4;
+            double newHight = this.ActualHeight*0.47;
+            double newHight2 = this.ActualHeight * 0.38;
 
             DataGrid1.Width = newWidht1;
             DataGrid2.Width = newWidht1;
@@ -72,7 +72,7 @@ namespace INTANT_Task
 
             DataGrid1.Height = newHight;
             DataGrid2.Height = newHight;
-            DataGrid3.Height = newHight;
+            DataGrid3.Height = newHight2;
         }
 
         private void LoadingFirstFileButton_Click(object sender, RoutedEventArgs e)
@@ -331,7 +331,7 @@ namespace INTANT_Task
 
         private void ShowValueNextConflictButton_Click(object sender, RoutedEventArgs e) 
         {
-            
+
             if (position >= differencesCount-1)
             {
                 MessageBox.Show("Вы дошли до крайнего конфликта");
@@ -375,8 +375,12 @@ namespace INTANT_Task
                 DataGrid3.SelectedIndex = rowIndex-2;
                 DataGrid3.ScrollIntoView(DataGrid3.SelectedItem);
 
-                //Обновляем индекс текущей выбранной колонки
-                SelectedColumnIndex = rowIndex - 2;
+                DataGrid1.SelectedIndex = rowIndex - 2;
+                DataGrid1.ScrollIntoView(DataGrid1.SelectedItem);
+
+                DataGrid2.SelectedIndex = rowIndex - 2;
+                DataGrid2.ScrollIntoView(DataGrid2.SelectedItem);
+
             }
         }
 
@@ -398,37 +402,52 @@ namespace INTANT_Task
             return 0;
         }
 
-        #region SelectAll
-        private void SaveUserChoice(string selectedFilePath) 
+        private void SelectAllFromFirstFile_Click(object sender, RoutedEventArgs e) 
         {
-            FileInfo selectedFile = new FileInfo(selectedFilePath);
-
-            using (ExcelPackage selectedPackage = new ExcelPackage(selectedFile)) 
+            for (int position2 = 0; position2 <= Conflict.Count - 1; position2++)
             {
-                ExcelWorksheet selectedWorksheet = selectedPackage.Workbook.Worksheets[1];
+                string cellAddress = Conflict[position2];
 
-                string cellAddress = Conflict[position];
+                int row = GetRowIndex(cellAddress);
+                int col = GetColumnIndex(cellAddress);
 
-                int rowIndex = GetRowIndex(cellAddress);
-                int columnIndex = GetColumnIndex(cellAddress);
-                DataRow dataRow = dataTable3.Rows[rowIndex-2];
+                row = row - 2;
 
-                for (int row = 2; row <= rowIndex; row++)
-                {
-                    for (int col = 0; col <= columnIndex; col++)
-                    {
-                        DataColumn dataColumn = dataTable3.Columns[col];
+                string valueFromSecondFile = dataTable1.Rows[row][col]?.ToString();
+                dataTable3.Rows[row][col] = valueFromSecondFile;
+                ColorCompliteConflict(row, col);
 
-                        string cellValue = selectedWorksheet.Cells[row, col+1].GetValue<string>()?.Trim();
+                string myVariable2 = "0";
+                TextBox2.Text = myVariable2;
 
-                        dataRow[dataColumn] = cellValue;
-                    }
-                }
-                DataGrid3.ItemsSource = dataTable3.DefaultView;
-                DataGrid3.Items.Refresh();
+                string myVariable3 = differencesCount.ToString();
+                TextBox3.Text = myVariable3;
             }
         }
-        #endregion
+
+        private void SelectAllFromSecondFile_Click(object sender, RoutedEventArgs e)
+        {
+
+            for (int position2 = 0; position2 <= Conflict.Count-1; position2++)
+            {
+                string cellAddress = Conflict[position2];
+
+                int row = GetRowIndex(cellAddress);
+                int col = GetColumnIndex(cellAddress);
+
+                row = row - 2;
+
+                string valueFromSecondFile = dataTable2.Rows[row][col]?.ToString();
+                dataTable3.Rows[row][col] = valueFromSecondFile;
+                ColorCompliteConflict(row, col);
+
+                string myVariable2 = "0";
+                TextBox2.Text = myVariable2;
+
+                string myVariable3 = differencesCount.ToString();
+                TextBox3.Text = myVariable3;
+            }
+        }
 
         private void SaveNewFileButton_Click(object sender, RoutedEventArgs e) 
         {
@@ -454,26 +473,20 @@ namespace INTANT_Task
                     {
                         worksheet.Cells[1, col].Value = dataTable3.Columns[col - 1].ColumnName;
                     }
+                    Dictionary<string, List<string>> groupedRows = new Dictionary<string, List<string>>();
 
                     //Заполняем данные строк
                     for (int row = 1; row <= rowCount; row++)
                     {
                         for (int col = 1; col <= colCount; col++)
                         {
-                            string cellValue = dataTable3.Rows[row-1][col-1]?.ToString();
+                            string cellValue = dataTable3.Rows[row - 1][col - 1]?.ToString();
                             worksheet.Cells[row + 1, col].Value = cellValue;
-                            Console.WriteLine($"Cell [{row+1},{col}]:{cellValue}");
+                            //Console.WriteLine($"Cell [{row + 1},{col}]:{cellValue}");
                         }
                     }
                     package.Save();
                     MessageBox.Show("Новый файл сохранен.");
-                    /*DataGrid1.Columns.Clear();
-                    DataGrid2.Columns.Clear();
-                    DataGrid3.Columns.Clear();
-                    
-                    dataTable1.Clear();
-                    dataTable2.Clear();
-                    dataTable3.Clear();*/
                 }
             }
         }
